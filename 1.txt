@@ -3,3 +3,6 @@ linus 是大佬
 good good study，day day up！
 这是修改的地方
 还是修改的地方
+
+第二次修改
+设置行号：set nu
