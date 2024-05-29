@@ -1,0 +1,6 @@
+LANG=zh_CN.utf8
+https_proxy=http://proxysz.zte.com.cn:80
+#git config --global http.proxy "http://proxysz.zte.com.cn:80"
+#git config --global https.proxy "http://proxysz.zte.com.cn:80"
+
+
