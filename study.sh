@@ -25,3 +25,36 @@ ps -o lstart,pid,comm,cmd `pgrep -f 'doris_be|DorisFE'` | awk -vOFS='@' 'functio
 ps -o lstart,pid,comm,cmd `pgrep -f 'doris_be|DorisFE'` | awk -vOFS='@' 'function _trim(start,end){ if (end == "") {str = substr($0, start+1)} else {str = substr($0, start+1, end-start-1)};gsub(/^ +| +$/,"",str);return str; } NR==1 {a=index($0,"STARTED")+7;b=index($0,"PID")+3;c=index($0,"CMD")} {print _trim(0,a),_trim(a,b),_trim(b,c),_trim(c-1)}' | awk -F'@' '{LEN=LEN<NF?NF:LEN;for(i=1;i<=NF;i++){a[NR,i]=$i;CL=(NR==1 && CL<length($i))?length($i):CL}}END{for(k=2;k<=NR;k++)for(j=1;j<=LEN;j++){printf j==1?"*************************** "k-1". row ***************************"RS:"";printf "%"CL"s: %s",a[1,j],a[k,j]RS }}'
 ### BE/FE 二合一
 /home/mr/mysql-5.7.22-linux-glibc2.12-x86_64/bin/mysql -uadmin -P9030 -h168.58.211.215 -e 'show frontends;show backends;' | sed 's/\t/^/g' | awk -v OFS=',' -F'^' '$0~/^Name|^BackendId/ {delete a;for (i=1;i<=NF;i++) if ($i ~ /Host|IsMaster|Alive|Version/) a[$i]=i; n=asort(a, idx)} {for (i=1; i<=n; i++) printf i==1?"%s":",%s",$(idx[i]);print ""}' | fmt_sql ,
+
+
+
+fmt_sql () 
+{ 
+    separator="${1}";
+    shift;
+    if [ "$#" -eq 0 ]; then
+        local lines="";
+        while IFS= read -r line; do
+            lines+="$line"'
+';
+        done;
+        local tabstr="${lines%
+*}";
+    else
+        tabstr="$*";
+    fi;
+    unset idxs;
+    for _el in `echo "$tabstr" | awk -F, '{nfc=nfc==""?NF:nfc;printf NF==nfc?"":NR-1" ";nfc=NF} END {print NR}'`;
+    do
+        idxs=${idxs:-1};
+        _txt=`echo "$tabstr" | sed -n "$idxs,$_el p"`;
+        idxs=$((_el+1));
+        field_cnt=`echo "${_txt}" | head -1 | awk -F"${separator}" '{print NF}'`;
+        _segment=$(printf "+#%.0s" `seq $field_cnt`;echo -n '+');
+        echo "${_txt}" | sed -E -e "s#^#|#g" -e "s%${separator}|$%#|%g" -e "1,+1 i ${_segment}" -e "$ a ${_segment}" | column -s '#' -t | awk '{if($0 ~ /^+/){gsub(" ","-",$0)} print $0}';
+    done
+}
+
+
+
+
