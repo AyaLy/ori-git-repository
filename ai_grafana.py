@@ -134,7 +134,7 @@ class EdgeAutoTest:
         sheet_name = 'Sheet2'  
         
         # 获取昨天的日期  
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        # yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
         # print(yesterday,type(yesterday)) 
         
         # 查找最新的CSV文件  
@@ -152,13 +152,13 @@ class EdgeAutoTest:
             df = pd.read_csv(latest_csv)
 
             # 筛选数据   
-            filtered_df = df[(df.iloc[:, 0].str.slice(0, 10) == yesterday) & (df.iloc[:, 1] == '刘宇6407002602')]  
-            # filtered_df = df[df.iloc[:, 1] == '刘宇6407002602']
+            # filtered_df = df[(df.iloc[:, 0].str.slice(0, 10) == yesterday) & (df.iloc[:, 1] == '刘宇6407002602')]  
+            filtered_df = df[df.iloc[:, 1] == '刘宇6407002602']
             # print(filtered_df.to_csv(index=False, header=False, sep=','))
             # 如果找到符合条件的数据
             if not filtered_df.empty:  
                 # 读取或创建Excel文件  
-                print(filtered_df.to_string(header=False, index=False))
+                # print(filtered_df.to_string(header=False, index=False))
                 if os.path.exists(output_excel_path):  
                     # 如果文件已存在，则追加数据  
                     with pd.ExcelWriter(output_excel_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:  
@@ -167,7 +167,7 @@ class EdgeAutoTest:
                         if sheet_name in book.sheet_names:  
                             # 如果sheet存在，则读取后追加  
                             existing_df = pd.read_excel(book, sheet_name=sheet_name)  
-                            combined_df = pd.concat([existing_df, filtered_df], ignore_index=True)  
+                            combined_df = pd.concat([existing_df, filtered_df], ignore_index=True).drop_duplicates()
                             combined_df.to_excel(writer, sheet_name=sheet_name, index=False)  
                         else:  
                             # 如果sheet不存在，则直接写入  
@@ -201,10 +201,6 @@ class EdgeAutoTest:
         # filter_df = df[df.iloc[:, 1] == '刘宇6407002602']
         df['合入日期'] = pd.to_datetime(df['合入日期'],format='%Y-%m-%d %H:%M:%S')
         df = df[['合入日期', 'AI生成代码行', '提交代码行']]
-        ## 筛选出30天之内的数据
-        # days30ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-        # df = df.loc[df['合入日期'] >= days30ago]
-        df = df.tail(30)
         # 创建一个 PrettyTable 对象
         # table = PrettyTable()  
         # # 添加列名  
@@ -226,7 +222,11 @@ class EdgeAutoTest:
         # grouped_df.loc[:, '合入日期'] = grouped_df['合入日期'].astype(str)
         # print(grouped_df)
         # print('========================================================================')
-        return grouped_df  
+        ## 筛选出30天之内的数据
+        # days30ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        # df = df.loc[df['合入日期'] >= days30ago]
+        return grouped_df.tail(30)
+        # return grouped_df
   
     def plot_data(self):  
         """  
@@ -237,7 +237,7 @@ class EdgeAutoTest:
         # 创建一个 PrettyTable 对象  
         table2 = PrettyTable()  
         # 添加列名  
-        table2.field_names = df.columns.tolist()  
+        table2.field_names = df.columns.tolist()
         # 遍历 DataFrame 的每一行，添加到 PrettyTable  
         for row in df.itertuples(index=False, name=None):
             table2.add_row(row)
@@ -278,7 +278,7 @@ if __name__ == "__main__":
     url = "https://zdsp.zx.zte.com.cn/grafana/d/GUJ_95oSk/aidai-ma-bu-men-kan-ban?orgId=1&var-department=视频研发五部"
     
     auto_test = EdgeAutoTest(url)
-    if sys.argv[1] == '1':
+    if len(sys.argv) > 1 and sys.argv[1] == '1':
         print('only draw')
     else:
         auto_test.open_browser()
